@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notebook to PDF | Professional Converter</title>
+    
+    <!-- 1. PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <!-- 2. Markdown Renderer -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    
+    <!-- 3. Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+
+    <!-- 4. Icons & Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- MathJax -->
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        :root {
+            /* UI Colors */
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --accent-color: #2563eb; /* Royal Blue */
+            --accent-hover: #1d4ed8;
+            
+            /* PDF Document Colors */
+            --doc-bg: #ffffff;
+            --doc-text: #000000;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            margin: 0;
+            padding: 40px 20px;
+            color: var(--text-primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- HEADER & CONTROLS --- */
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #1e293b, #2563eb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.05em;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .control-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+            margin-bottom: 50px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .control-panel:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Drag & Drop Upload Zone */
+        .upload-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 40px 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #f8fafc;
+            position: relative;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--accent-color);
+            background: #eff6ff;
+        }
+
+        .upload-zone input[type="file"] {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .upload-icon {
+            width: 48px;
+            height: 48px;
+            color: var(--accent-color);
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 5px;
+        }
+
+        .upload-hint {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        /* Action Button */
+        .action-btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 14px 35px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 25px;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+        }
+
+        .action-btn.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
+        }
+
+        .action-btn:hover {
+            background-color: var(--accent-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+        }
+
+        .status-msg {
+            margin-top: 20px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            min-height: 24px;
+        }
+
+        /* --- PDF DOCUMENT PREVIEW --- */
+        .paper-container {
+            perspective: 1000px;
+            margin-bottom: 100px;
+        }
+
+        #notebook-content {
+            background: var(--doc-bg);
+            width: 210mm; /* A4 Width */
+            min-height: 297mm;
+            padding: 25mm;
+            box-sizing: border-box;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 20px 40px -10px rgba(0,0,0,0.2);
+            border-radius: 2px;
+            
+            /* Professional Document Typography */
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 12pt;
+            line-height: 1.6;
+            color: var(--doc-text);
+            text-align: justify;
+            transform-origin: top center;
+            transition: transform 0.5s ease;
+        }
+
+        /* --- INTERNAL DOCUMENT STYLING (The content of the PDF) --- */
+        
+        /* Headings */
+        #notebook-content h1, #notebook-content h2, #notebook-content h3 {
+            font-family: 'Times New Roman', Times, serif;
+            color: #000;
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            text-align: left;
+            line-height: 1.2;
+        }
+        #notebook-content h1 { 
+            font-size: 26pt; 
+            border-bottom: 3px solid #000; 
+            padding-bottom: 10px; 
+            text-align: center;
+            margin-top: 0;
+        }
+        #notebook-content h2 { 
+            font-size: 18pt; 
+            border-bottom: 1px solid #999; 
+            padding-bottom: 5px; 
+        }
+        #notebook-content h3 { 
+            font-size: 14pt; 
+            font-weight: bold;
+            font-style: italic;
+        }
+
+        /* Standard text */
+        #notebook-content p { margin-bottom: 1em; }
+        
+        /* Blockquotes */
+        #notebook-content blockquote {
+            border-left: 3px solid #444;
+            margin: 1.5em 2em;
+            padding-left: 1em;
+            font-style: italic;
+            color: #444;
+            background: transparent;
+        }
+
+        /* Code Blocks - Designed for Print */
+        .code-cell {
+            margin-bottom: 1.5em;
+            break-inside: avoid;
+        }
+
+        .input-area {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-left: 4px solid #ced4da;
+            padding: 10px 15px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 10pt;
+            position: relative;
+            text-align: left;
+            margin-bottom: 5px;
+        }
+
+        .prompt {
+            color: #6c757d;
+            font-family: 'Helvetica', sans-serif;
+            font-size: 8pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .output-area {
+            padding: 10px 15px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 9.5pt;
+            color: #212529;
+            white-space: pre-wrap;
+            text-align: left;
+            border-left: 4px solid transparent; /* Align with code */
+        }
+
+        .output-area img {
+            display: block;
+            margin: 15px auto;
+            max-width: 100%;
+            height: auto;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        /* Academic Tables */
+        .dataframe {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1.5em 0;
+            font-size: 10pt;
+            font-family: 'Times New Roman', Times, serif;
+        }
+        .dataframe th {
+            border-top: 2px solid #000;
+            border-bottom: 1px solid #000;
+            font-weight: bold;
+            padding: 6px 10px;
+            text-align: left;
+        }
+        .dataframe td {
+            border-bottom: 1px solid #ddd;
+            padding: 6px 10px;
+        }
+        .dataframe tr:last-child td { border-bottom: 2px solid #000; }
+
+        /* Syntax Highlighting Overrides for Print */
+        pre { margin: 0 !important; white-space: pre-wrap !important; }
+        code { font-family: 'Courier New', Courier, monospace !important; text-shadow: none !important; }
+
+        /* Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Print Hiding */
+        @media print {
+            body { background: none; padding: 0; display: block; }
+            .header, .control-panel { display: none; }
+            #notebook-content { 
+                width: 100%; margin: 0; box-shadow: none; padding: 0; min-height: auto;
+            }
+            .paper-container { margin: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Section -->
+    <div class="header">
+        <h1>Notebook to PDF</h1>
+        <p>Professional converter for Jupyter Notebooks</p>
+    </div>
+
+    <!-- Interface Panel -->
+    <div class="control-panel">
+        <label class="upload-zone" id="drop-area">
+            <input type="file" id="fileInput" accept=".ipynb" onchange="handleFile()">
+            <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+            </svg>
+            <div class="upload-text">Click to upload or drag and drop</div>
+            <div class="upload-hint">Supports .ipynb files up to 10MB</div>
+        </label>
+
+        <div class="status-msg" id="status"></div>
+        
+        <button id="downloadBtn" class="action-btn" onclick="generatePDF()">
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            Download PDF Report
+        </button>
+    </div>
+
+    <!-- Document Preview (The Paper) -->
+    <div class="paper-container">
+        <div id="notebook-content">
+            <div style="text-align:center; padding-top: 50%; opacity: 0.3;">
+                <svg width="64" height="64" style="margin: 0 auto 20px auto; display:block;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                <i style="font-family: 'Inter', sans-serif;">Document Preview</i>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentFileName = "Document";
+
+        function handleFile() {
+            const fileInput = document.getElementById('fileInput');
+            const status = document.getElementById('status');
+            const btn = document.getElementById('downloadBtn');
+            const dropArea = document.getElementById('drop-area');
+            
+            if (fileInput.files.length === 0) return;
+
+            const file = fileInput.files[0];
+            currentFileName = file.name.replace('.ipynb', '');
+            
+            // Visual feedback
+            dropArea.style.borderColor = '#2563eb';
+            dropArea.style.backgroundColor = '#eff6ff';
+            status.innerHTML = `<span style="color:#64748b">Analyzing <b>${file.name}</b>...</span>`;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const json = JSON.parse(e.target.result);
+                    renderNotebook(json);
+                    
+                    status.innerHTML = `<span style="color:#10b981; font-weight:600;">✓ Ready for conversion</span>`;
+                    btn.classList.add('visible');
+                    
+                    // Smooth scroll to preview
+                    document.getElementById('notebook-content').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    
+                } catch (err) {
+                    status.innerHTML = `<span style="color:#ef4444">❌ Error: Invalid IPYNB file</span>`;
+                    console.error(err);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function renderNotebook(json) {
+            const container = document.getElementById('notebook-content');
+            container.innerHTML = ''; 
+
+            // Title
+            const titleText = (json.metadata && json.metadata.title) ? json.metadata.title : currentFileName;
+            const title = document.createElement('h1');
+            title.innerText = titleText;
+            container.appendChild(title);
+
+            if (!json.cells) return;
+
+            json.cells.forEach(cell => {
+                // Markdown
+                if (cell.cell_type === 'markdown') {
+                    const div = document.createElement('div');
+                    div.className = 'markdown-cell';
+                    const source = Array.isArray(cell.source) ? cell.source.join('') : cell.source;
+                    div.innerHTML = marked.parse(source);
+                    container.appendChild(div);
+                }
+                
+                // Code
+                else if (cell.cell_type === 'code') {
+                    const cellWrapper = document.createElement('div');
+                    cellWrapper.className = 'code-cell';
+
+                    // Input
+                    const inputDiv = document.createElement('div');
+                    inputDiv.className = 'input-area';
+                    
+                    const prompt = document.createElement('span');
+                    prompt.className = 'prompt';
+                    prompt.innerText = `In [${cell.execution_count || ' '}]:`;
+                    inputDiv.appendChild(prompt);
+
+                    const pre = document.createElement('pre');
+                    const code = document.createElement('code');
+                    code.className = 'language-python';
+                    code.textContent = Array.isArray(cell.source) ? cell.source.join('') : cell.source;
+                    
+                    pre.appendChild(code);
+                    inputDiv.appendChild(pre);
+                    cellWrapper.appendChild(inputDiv);
+
+                    // Output
+                    if (cell.outputs && cell.outputs.length > 0) {
+                        cell.outputs.forEach(out => {
+                            const outDiv = document.createElement('div');
+                            outDiv.className = 'output-area';
+                            let hasContent = false;
+
+                            if (out.data && out.data['image/png']) {
+                                const img = document.createElement('img');
+                                img.src = 'data:image/png;base64,' + out.data['image/png'];
+                                outDiv.appendChild(img);
+                                hasContent = true;
+                            } else if (out.data && out.data['text/html']) {
+                                const htmlContent = Array.isArray(out.data['text/html']) ? out.data['text/html'].join('') : out.data['text/html'];
+                                if (htmlContent.includes('<table')) {
+                                    const tempDiv = document.createElement('div');
+                                    tempDiv.innerHTML = htmlContent;
+                                    const table = tempDiv.querySelector('table');
+                                    if(table) {
+                                        table.className = "dataframe";
+                                        outDiv.appendChild(table);
+                                        hasContent = true;
+                                    } else {
+                                        outDiv.innerText = "[Complex HTML Object]";
+                                        hasContent = true;
+                                    }
+                                }
+                            } else if (out.text) {
+                                outDiv.textContent = Array.isArray(out.text) ? out.text.join('') : out.text;
+                                hasContent = true;
+                            } else if (out.data && out.data['text/plain']) {
+                                outDiv.textContent = Array.isArray(out.data['text/plain']) ? out.data['text/plain'].join('') : out.data['text/plain'];
+                                hasContent = true;
+                            }
+                            
+                            if (hasContent) cellWrapper.appendChild(outDiv);
+                        });
+                    }
+                    container.appendChild(cellWrapper);
+                }
+            });
+            
+            Prism.highlightAll();
+            if (window.MathJax) MathJax.typeset();
+        }
+
+        function generatePDF() {
+            const element = document.getElementById('notebook-content');
+            const btn = document.getElementById('downloadBtn');
+            const originalHTML = btn.innerHTML;
+            
+            btn.innerHTML = `Generating...`;
+            btn.style.opacity = "0.7";
+            btn.disabled = true;
+
+            const opt = {
+                margin:       [15, 15, 15, 15],
+                filename:     currentFileName + '_Professional_Report.pdf',
+                image:        { type: 'jpeg', quality: 1.0 },
+                html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+
+            html2pdf().set(opt).from(element).save().then(() => {
+                btn.innerHTML = originalHTML;
+                btn.style.opacity = "1";
+                btn.disabled = false;
+            }).catch(err => {
+                alert("Error: " + err.message);
+                btn.innerHTML = originalHTML;
+                btn.style.opacity = "1";
+                btn.disabled = false;
+            });
+        }
+    </script>
+</body>
+</html>
