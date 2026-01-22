@@ -5,20 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lindenwood DSCI 356000 | Notebook Converter</title>
     
-    <!-- 1. PDF Generation -->
+    <!-- PDF Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    
-    <!-- 2. Markdown Renderer -->
+    <!-- Markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    
-    <!-- 3. Syntax Highlighting -->
+    <!-- Prism Syntax Highlighting -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
-
-    <!-- 4. Icons & Fonts -->
+    
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
@@ -34,358 +32,223 @@
 
     <style>
         :root {
-            /* Lindenwood Inspired Colors */
-            --lu-gold: #B5A26C; /* Gold-ish tone */
+            --lu-gold: #B5A26C;
             --lu-black: #000000;
-            --lu-gray: #1f1f1f;
-            
-            /* Modern UI Colors */
-            --accent-color: #B5A26C; 
-            --accent-hover: #9e8b59;
             --bg-dark: #121212;
             --glass-panel: rgba(30, 30, 30, 0.85);
             --glass-border: rgba(255, 255, 255, 0.1);
             --text-light: #f5f5f5;
             --text-dim: #a3a3a3;
-            
-            /* PDF Document Colors (Keep Professional White) */
+            /* PDF Document Styles */
             --doc-bg: #ffffff;
             --doc-text: #000000;
+            /* EXACT A4 DIMENSIONS */
+            --a4-width: 210mm;
+            --a4-height: 297mm; 
         }
 
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-dark);
-            /* Dynamic Background Pattern */
-            background-image: 
-                radial-gradient(at 0% 0%, hsla(45, 36%, 57%, 0.15) 0px, transparent 50%),
-                radial-gradient(at 100% 100%, hsla(0, 0%, 20%, 0.1) 0px, transparent 50%);
+            background-image: radial-gradient(at 0% 0%, hsla(45, 36%, 57%, 0.15) 0px, transparent 50%), radial-gradient(at 100% 100%, hsla(0, 0%, 20%, 0.1) 0px, transparent 50%);
             min-height: 100vh;
             margin: 0;
-            padding: 40px 20px;
+            padding: 40px 0; /* Remove side padding to allow full width preview */
             color: var(--text-light);
             display: flex;
             flex-direction: column;
             align-items: center;
-            overflow-x: hidden;
         }
 
-        /* --- BACKGROUND ANIMATION --- */
-        .bg-shapes {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            overflow: hidden;
-        }
-        .shape {
-            position: absolute;
-            background: linear-gradient(45deg, var(--lu-gold), transparent);
-            border-radius: 50%;
-            opacity: 0.1;
-            animation: float 20s infinite linear;
-        }
-        .shape:nth-child(1) { width: 300px; height: 300px; top: -50px; left: -100px; animation-duration: 25s; }
-        .shape:nth-child(2) { width: 200px; height: 200px; bottom: 10%; right: -50px; animation-duration: 30s; animation-direction: reverse; }
-        .shape:nth-child(3) { width: 100px; height: 100px; top: 40%; left: 20%; animation-duration: 15s; }
+        /* --- UI STYLES (Hidden in Print) --- */
+        .header { text-align: center; margin-bottom: 30px; }
+        .university-badge { font-family: 'Montserrat', sans-serif; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 3px; color: var(--lu-gold); margin-bottom: 15px; display: inline-block; font-weight: 800; border-bottom: 2px solid var(--lu-gold); padding-bottom: 5px; }
+        .header h1 { font-family: 'Montserrat', sans-serif; font-size: 2.5rem; font-weight: 800; margin: 0; color: white; letter-spacing: -1px; }
+        .header p { color: var(--text-dim); font-size: 1rem; margin-top: 10px; font-weight: 300; }
 
-        @keyframes float {
-            0% { transform: translate(0, 0) rotate(0deg); }
-            50% { transform: translate(50px, 50px) rotate(180deg); }
-            100% { transform: translate(0, 0) rotate(360deg); }
-        }
-
-        /* --- HEADER & BRANDING --- */
-        .header {
-            text-align: center;
-            margin-bottom: 50px;
-            animation: slideDown 0.8s ease-out;
-            position: relative;
-        }
-
-        .university-badge {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 0.8rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: var(--lu-gold);
-            margin-bottom: 10px;
-            display: block;
-            font-weight: 700;
-        }
-
-        .header h1 {
-            font-family: 'Montserrat', sans-serif;
-            font-size: 3.5rem;
-            font-weight: 800;
-            margin: 0;
-            background: linear-gradient(135deg, #fff 0%, #aaa 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: -1px;
-            text-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-
-        .header p {
-            color: var(--text-dim);
-            font-size: 1.2rem;
-            margin-top: 10px;
-            font-weight: 300;
-        }
-
-        /* --- CONTROL PANEL --- */
-        .control-panel {
-            background: var(--glass-panel);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--glass-border);
-            padding: 3rem;
-            border-radius: 24px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            width: 100%;
-            max-width: 650px;
-            text-align: center;
-            margin-bottom: 60px;
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            animation: zoomIn 0.6s ease-out 0.2s backwards;
-        }
-
-        .control-panel:hover {
-            transform: translateY(-5px) scale(1.01);
-            border-color: rgba(255, 255, 255, 0.2);
-        }
-
-        /* Upload Zone */
-        .upload-zone {
-            border: 2px dashed #444;
-            border-radius: 16px;
-            padding: 50px 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            background: rgba(255,255,255,0.02);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .upload-zone:hover {
-            border-color: var(--lu-gold);
-            background: rgba(181, 162, 108, 0.05);
-        }
-
-        .upload-zone input[type="file"] {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            opacity: 0;
-            cursor: pointer;
-        }
-
-        .upload-icon {
-            width: 64px;
-            height: 64px;
-            color: var(--lu-gold);
-            margin-bottom: 20px;
-            filter: drop-shadow(0 0 10px rgba(181, 162, 108, 0.3));
-            transition: transform 0.3s;
-        }
+        .control-panel { background: var(--glass-panel); backdrop-filter: blur(16px); border: 1px solid var(--glass-border); padding: 2rem; border-radius: 16px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); width: 90%; max-width: 800px; text-align: center; margin-bottom: 40px; display: flex; flex-direction: column; align-items: center; gap: 20px; }
         
-        .upload-zone:hover .upload-icon {
-            transform: scale(1.1);
+        .upload-row { display: flex; gap: 20px; width: 100%; justify-content: center; align-items: center; flex-wrap: wrap; }
+
+        .upload-zone { border: 2px dashed #444; border-radius: 12px; padding: 15px 30px; cursor: pointer; transition: all 0.3s ease; background: rgba(255,255,255,0.02); position: relative; overflow: hidden; display: flex; align-items: center; gap: 15px; flex: 1; min-width: 280px; }
+        .upload-zone:hover { border-color: var(--lu-gold); background: rgba(181, 162, 108, 0.05); }
+        .upload-zone input[type="file"] { position: absolute; width: 100%; height: 100%; top: 0; left: 0; opacity: 0; cursor: pointer; }
+        .upload-text { font-weight: 600; color: var(--text-light); }
+        .upload-icon { width: 24px; height: 24px; color: var(--lu-gold); }
+        
+        .action-btn { background: linear-gradient(135deg, var(--lu-gold), #8c7d52); color: #000; border: none; padding: 15px 30px; border-radius: 50px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: all 0.3s; opacity: 0.5; pointer-events: none; display: flex; align-items: center; gap: 10px; white-space: nowrap; }
+        .action-btn.visible { opacity: 1; pointer-events: all; }
+        .action-btn:hover { transform: translateY(-2px); filter: brightness(1.1); box-shadow: 0 10px 20px rgba(181, 162, 108, 0.2); }
+
+        .status-msg { font-size: 0.9rem; color: var(--text-dim); min-height: 20px; }
+
+        /* PREVIEW CONTAINER - NOW EXACT MATCH FOR PDF */
+        .preview-wrapper { 
+            width: 100%; 
+            display: flex; 
+            justify-content: center; 
+            padding-bottom: 50px; 
+            overflow-x: auto; /* Scroll horizontally on small screens */
+            background: rgba(0,0,0,0.2); /* Darker background to pop the paper */
+            padding-top: 50px;
         }
 
-        .upload-text {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--text-light);
-            margin-bottom: 8px;
-        }
-
-        .upload-hint {
-            font-size: 0.9rem;
-            color: var(--text-dim);
-        }
-
-        /* Action Button */
-        .action-btn {
-            background: linear-gradient(135deg, var(--lu-gold), #8c7d52);
-            color: #000;
-            border: none;
-            padding: 16px 40px;
-            border-radius: 50px;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            margin-top: 30px;
-            box-shadow: 0 10px 20px rgba(181, 162, 108, 0.2);
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 12px;
-            opacity: 0;
-            transform: translateY(20px);
-            pointer-events: none;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .action-btn.visible {
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: all;
-        }
-
-        .action-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 30px rgba(181, 162, 108, 0.3);
-            filter: brightness(1.1);
-        }
-
-        .status-msg {
-            margin-top: 25px;
-            font-size: 1rem;
-            font-weight: 500;
-            min-height: 24px;
-            color: var(--text-dim);
-        }
-
-        /* --- PDF PREVIEW (The Paper Effect) --- */
-        .preview-wrapper {
-            perspective: 1500px;
-            margin-bottom: 100px;
-            width: 100%;
-            display: flex;
-            justify-content: center;
-        }
-
+        /* --- PDF CONTENT STYLES (Exact WYSIWYG) --- */
         #notebook-content {
             background: var(--doc-bg);
-            width: 210mm; /* A4 Width */
+            /* Fixed width to match A4 PDF generation exactly */
+            width: 210mm; 
             min-height: 297mm;
-            padding: 25mm;
+            padding: 20mm; /* Consistent margins */
             box-sizing: border-box;
-            box-shadow: 
-                0 1px 2px rgba(0,0,0,0.05), 
-                0 20px 50px rgba(0,0,0,0.5),
-                0 0 0 1px rgba(255,255,255,0.1) inset; /* Subtle border */
-            border-radius: 2px;
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+            margin: 0 auto;
             
-            /* Professional Document Typography */
+            /* Professional Typography */
             font-family: 'Times New Roman', Times, serif;
-            font-size: 12pt;
-            line-height: 1.6;
+            font-size: 11pt; 
+            line-height: 1.5;
             color: var(--doc-text);
-            text-align: justify;
+            text-align: justify; /* Justified text for professional look */
             
-            transform: rotateX(5deg); /* 3D Look */
-            transform-origin: top center;
-            transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
-            opacity: 0.5; /* Dimmed initially */
+            /* REMOVED 3D TRANSFORMS to ensure exact match */
+            transform: none; 
+        }
+
+        /* Reset transform when printing/generating */
+        body.generating-pdf #notebook-content {
+            transform: none !important;
+            box-shadow: none !important;
+            margin: 0 auto !important;
+        }
+
+        /* Internal Document Styling */
+        #notebook-content h1, #notebook-content h2, #notebook-content h3 { font-family: 'Times New Roman', Times, serif; color: #000; margin-top: 1.5em; margin-bottom: 0.5em; text-align: left; line-height: 1.2; width: 100%; }
+        #notebook-content h1 { font-size: 22pt; border-bottom: 2px solid #000; padding-bottom: 10px; text-align: center; margin-top: 0; }
+        #notebook-content h2 { font-size: 16pt; border-bottom: 1px solid #999; padding-bottom: 5px; }
+        #notebook-content h3 { font-size: 13pt; font-weight: bold; font-style: italic; }
+        #notebook-content p { margin-bottom: 1em; width: 100%; }
+        #notebook-content blockquote { border-left: 3px solid #444; margin: 1em 2em; padding-left: 1em; font-style: italic; color: #444; }
+
+        /* CODE BLOCK FIXES - CRITICAL FOR NO CUTOFF */
+        .code-cell { 
+            margin-bottom: 1.5em; 
+            width: 100%;
+            break-inside: avoid; 
         }
         
-        .preview-active #notebook-content {
-            transform: rotateX(0deg);
-            opacity: 1;
+        .input-area { 
+            background-color: #f5f5f5; 
+            border: 1px solid #ddd; 
+            border-left: 4px solid #ced4da; 
+            padding: 8px 12px; 
+            font-family: 'Courier New', Courier, monospace; 
+            font-size: 9pt; 
+            text-align: left; 
+            margin-bottom: 5px; 
+            width: 100%;
+            box-sizing: border-box; 
         }
-
-        /* --- ANIMATIONS --- */
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-30px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes zoomIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
-
-        /* --- INTERNAL DOCUMENT STYLING (SAME AS PRO) --- */
-        /* Headings */
-        #notebook-content h1, #notebook-content h2, #notebook-content h3 {
-            font-family: 'Times New Roman', Times, serif;
-            color: #000;
-            margin-top: 1.5em;
-            margin-bottom: 0.5em;
-            text-align: left;
-            line-height: 1.2;
-        }
-        #notebook-content h1 { font-size: 26pt; border-bottom: 3px solid #000; padding-bottom: 10px; text-align: center; margin-top: 0; }
-        #notebook-content h2 { font-size: 18pt; border-bottom: 1px solid #999; padding-bottom: 5px; }
-        #notebook-content h3 { font-size: 14pt; font-weight: bold; font-style: italic; }
-        #notebook-content p { margin-bottom: 1em; }
         
-        #notebook-content blockquote {
-            border-left: 3px solid #444; margin: 1.5em 2em; padding-left: 1em; font-style: italic; color: #444; background: transparent;
+        .prompt { 
+            color: #6c757d; 
+            font-family: 'Helvetica', sans-serif; 
+            font-size: 8pt; 
+            font-weight: bold; 
+            margin-bottom: 2px; 
+            display: block; 
+        }
+        
+        .output-area { 
+            padding: 8px 12px; 
+            font-family: 'Courier New', Courier, monospace; 
+            font-size: 9pt; 
+            color: #212529; 
+            text-align: left; 
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .output-area img { 
+            display: block; 
+            margin: 10px auto; 
+            max-width: 100%; 
+            height: auto; 
         }
 
-        /* Code Blocks */
-        .code-cell { margin-bottom: 1.5em; break-inside: avoid; }
-        .input-area {
-            background-color: #f8f9fa; border: 1px solid #e9ecef; border-left: 4px solid #ced4da;
-            padding: 10px 15px; font-family: 'Courier New', Courier, monospace; font-size: 10pt; position: relative; text-align: left; margin-bottom: 5px;
+        /* TEXT WRAPPING FIXES - Ensures code doesn't get cut off */
+        pre { 
+            margin: 0 !important; 
+            white-space: pre-wrap !important;       /* CSS3 */
+            white-space: -moz-pre-wrap !important;  /* Mozilla */
+            white-space: -pre-wrap !important;      /* Opera 4-6 */
+            white-space: -o-pre-wrap !important;    /* Opera 7 */
+            word-wrap: break-word !important;       /* Internet Explorer 5.5+ */
+            overflow-wrap: break-word !important;
+            max-width: 100%;
         }
-        .prompt { color: #6c757d; font-family: 'Helvetica', sans-serif; font-size: 8pt; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; display: block; }
-        .output-area {
-            padding: 10px 15px; font-family: 'Courier New', Courier, monospace; font-size: 9.5pt; color: #212529;
-            white-space: pre-wrap; text-align: left; border-left: 4px solid transparent;
+        code { 
+            font-family: 'Courier New', Courier, monospace !important; 
+            text-shadow: none !important; 
+            white-space: pre-wrap !important;
+            word-wrap: break-word !important;
         }
-        .output-area img { display: block; margin: 15px auto; max-width: 100%; height: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
 
         /* Tables */
-        .dataframe { border-collapse: collapse; width: 100%; margin: 1.5em 0; font-size: 10pt; font-family: 'Times New Roman', Times, serif; }
-        .dataframe th { border-top: 2px solid #000; border-bottom: 1px solid #000; font-weight: bold; padding: 6px 10px; text-align: left; }
-        .dataframe td { border-bottom: 1px solid #ddd; padding: 6px 10px; }
-        .dataframe tr:last-child td { border-bottom: 2px solid #000; }
-
-        pre { margin: 0 !important; white-space: pre-wrap !important; }
-        code { font-family: 'Courier New', Courier, monospace !important; text-shadow: none !important; }
+        .dataframe { border-collapse: collapse; width: 100%; margin: 1em 0; font-size: 9pt; font-family: 'Times New Roman', Times, serif; }
+        .dataframe th { border-top: 2px solid #000; border-bottom: 1px solid #000; font-weight: bold; padding: 4px; text-align: left; }
+        .dataframe td { border-bottom: 1px solid #ddd; padding: 4px; }
 
         /* Print Hiding */
         @media print {
-            body { background: none; padding: 0; display: block; }
+            body { background: white; padding: 0; margin: 0; }
             .header, .control-panel, .bg-shapes { display: none; }
-            #notebook-content { width: 100%; margin: 0; box-shadow: none; padding: 0; min-height: auto; transform: none; opacity: 1; }
-            .preview-wrapper { margin: 0; display: block; }
+            #notebook-content { 
+                box-shadow: none; 
+                margin: 0 auto; 
+                width: 100%; 
+                padding: 20mm; /* Ensure print margins match preview padding */
+                transform: none !important;
+            }
+            .preview-wrapper { padding: 0; display: block; perspective: none; background: white; }
         }
     </style>
 </head>
 <body>
 
-    <!-- Background Shapes -->
     <div class="bg-shapes">
-        <div class="shape"></div>
-        <div class="shape"></div>
-        <div class="shape"></div>
+        <div style="position:absolute; width:300px; height:300px; background:radial-gradient(var(--lu-gold), transparent); top:-100px; left:-100px; border-radius:50%; opacity:0.1;"></div>
+        <div style="position:absolute; width:200px; height:200px; background:radial-gradient(var(--lu-gold), transparent); bottom:20px; right:-50px; border-radius:50%; opacity:0.1;"></div>
     </div>
 
-    <!-- Header Section -->
     <div class="header">
         <span class="university-badge">Lindenwood University</span>
         <h1>DSCI 356000: Machine Learning</h1>
-        <p>Professional Notebook to PDF Converter for Students</p>
+        <p>Notebook to Professional PDF Converter</p>
     </div>
 
-    <!-- Interface Panel -->
     <div class="control-panel">
-        <label class="upload-zone" id="drop-area">
-            <input type="file" id="fileInput" accept=".ipynb" onchange="handleFile()">
-            <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-            </svg>
-            <div class="upload-text">Drop your .ipynb file here</div>
-            <div class="upload-hint">or click to browse local files</div>
-        </label>
-
+        <div class="upload-row">
+            <label class="upload-zone" id="drop-area">
+                <input type="file" id="fileInput" accept=".ipynb" onchange="handleFile()">
+                <svg class="upload-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                </svg>
+                <div class="upload-text">Select .ipynb File</div>
+            </label>
+            
+            <button id="downloadBtn" class="action-btn" onclick="generatePDF()">
+                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Save as PDF
+            </button>
+        </div>
         <div class="status-msg" id="status"></div>
-        
-        <button id="downloadBtn" class="action-btn" onclick="generatePDF()">
-            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-            Export Professional PDF
-        </button>
     </div>
 
-    <!-- Document Preview (The Paper) -->
     <div class="preview-wrapper" id="preview-wrapper">
         <div id="notebook-content">
             <div style="text-align:center; padding-top: 50%; opacity: 0.3;">
-                <svg width="64" height="64" style="margin: 0 auto 20px auto; display:block;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-                <i style="font-family: 'Inter', sans-serif;">Document Preview will appear here</i>
+                <i>Document Preview Area</i>
             </div>
         </div>
     </div>
@@ -398,17 +261,15 @@
             const status = document.getElementById('status');
             const btn = document.getElementById('downloadBtn');
             const dropArea = document.getElementById('drop-area');
-            const previewWrapper = document.getElementById('preview-wrapper');
             
             if (fileInput.files.length === 0) return;
 
             const file = fileInput.files[0];
             currentFileName = file.name.replace('.ipynb', '');
             
-            // Visual feedback
             dropArea.style.borderColor = '#B5A26C';
             dropArea.style.backgroundColor = 'rgba(181, 162, 108, 0.1)';
-            status.innerHTML = `<span style="color:#a3a3a3">Parsing <b>${file.name}</b>... please wait</span>`;
+            status.innerHTML = `Parsing <b>${file.name}</b>...`;
             
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -416,17 +277,11 @@
                     const json = JSON.parse(e.target.result);
                     renderNotebook(json);
                     
-                    status.innerHTML = `<span style="color:#B5A26C; font-weight:600;">✓ File Loaded Successfully</span>`;
+                    status.innerHTML = `<span style="color:#B5A26C; font-weight:600;">✓ Ready. Scroll down to check preview.</span>`;
                     btn.classList.add('visible');
-                    previewWrapper.classList.add('preview-active');
-                    
-                    // Smooth scroll to preview
-                    setTimeout(() => {
-                        document.getElementById('notebook-content').scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }, 500);
                     
                 } catch (err) {
-                    status.innerHTML = `<span style="color:#ef4444">❌ Error: Invalid IPYNB file format</span>`;
+                    status.innerHTML = `<span style="color:#ef4444">❌ Error: Invalid file</span>`;
                     console.error(err);
                 }
             };
@@ -437,7 +292,6 @@
             const container = document.getElementById('notebook-content');
             container.innerHTML = ''; 
 
-            // Title
             const titleText = (json.metadata && json.metadata.title) ? json.metadata.title : currentFileName;
             const title = document.createElement('h1');
             title.innerText = titleText;
@@ -446,24 +300,18 @@
             if (!json.cells) return;
 
             json.cells.forEach(cell => {
-                // Markdown
                 if (cell.cell_type === 'markdown') {
                     const div = document.createElement('div');
                     div.className = 'markdown-cell';
                     const source = Array.isArray(cell.source) ? cell.source.join('') : cell.source;
                     div.innerHTML = marked.parse(source);
                     container.appendChild(div);
-                }
-                
-                // Code
-                else if (cell.cell_type === 'code') {
+                } else if (cell.cell_type === 'code') {
                     const cellWrapper = document.createElement('div');
                     cellWrapper.className = 'code-cell';
 
-                    // Input
                     const inputDiv = document.createElement('div');
                     inputDiv.className = 'input-area';
-                    
                     const prompt = document.createElement('span');
                     prompt.className = 'prompt';
                     prompt.innerText = `In [${cell.execution_count || ' '}]:`;
@@ -473,38 +321,27 @@
                     const code = document.createElement('code');
                     code.className = 'language-python';
                     code.textContent = Array.isArray(cell.source) ? cell.source.join('') : cell.source;
-                    
                     pre.appendChild(code);
                     inputDiv.appendChild(pre);
                     cellWrapper.appendChild(inputDiv);
 
-                    // Output
-                    if (cell.outputs && cell.outputs.length > 0) {
+                    if (cell.outputs) {
                         cell.outputs.forEach(out => {
                             const outDiv = document.createElement('div');
                             outDiv.className = 'output-area';
                             let hasContent = false;
-
                             if (out.data && out.data['image/png']) {
                                 const img = document.createElement('img');
                                 img.src = 'data:image/png;base64,' + out.data['image/png'];
+                                
+                                // FIX: Handle image load error
+                                img.onerror = function() {
+                                    this.style.display = 'none';
+                                    console.error('Error loading image', out.data['image/png']); 
+                                };
+
                                 outDiv.appendChild(img);
                                 hasContent = true;
-                            } else if (out.data && out.data['text/html']) {
-                                const htmlContent = Array.isArray(out.data['text/html']) ? out.data['text/html'].join('') : out.data['text/html'];
-                                if (htmlContent.includes('<table')) {
-                                    const tempDiv = document.createElement('div');
-                                    tempDiv.innerHTML = htmlContent;
-                                    const table = tempDiv.querySelector('table');
-                                    if(table) {
-                                        table.className = "dataframe";
-                                        outDiv.appendChild(table);
-                                        hasContent = true;
-                                    } else {
-                                        outDiv.innerText = "[HTML Visualization]";
-                                        hasContent = true;
-                                    }
-                                }
                             } else if (out.text) {
                                 outDiv.textContent = Array.isArray(out.text) ? out.text.join('') : out.text;
                                 hasContent = true;
@@ -512,14 +349,12 @@
                                 outDiv.textContent = Array.isArray(out.data['text/plain']) ? out.data['text/plain'].join('') : out.data['text/plain'];
                                 hasContent = true;
                             }
-                            
                             if (hasContent) cellWrapper.appendChild(outDiv);
                         });
                     }
                     container.appendChild(cellWrapper);
                 }
             });
-            
             Prism.highlightAll();
             if (window.MathJax) MathJax.typeset();
         }
@@ -533,15 +368,20 @@
             btn.style.opacity = "0.7";
             btn.disabled = true;
 
-            // Reset transform for clean capture
-            element.style.transform = "none";
-            element.style.opacity = "1";
-
+            // --- SETTINGS TO MATCH PREVIEW EXACTLY ---
+            // We set margin to 0 and let the CSS padding inside #notebook-content handle the margins.
+            // This ensures what you see (including padding) is what gets printed.
             const opt = {
-                margin:       [15, 15, 15, 15],
-                filename:     currentFileName + '_Report.pdf',
-                image:        { type: 'jpeg', quality: 1.0 },
-                html2canvas:  { scale: 2, useCORS: true, letterRendering: true },
+                margin:       0, 
+                filename:     currentFileName + '_Lindenwood_Report.pdf',
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { 
+                    scale: 2, 
+                    useCORS: true, 
+                    letterRendering: true,
+                    scrollY: 0,
+                    windowWidth: document.getElementById('notebook-content').offsetWidth // Match container width
+                },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
                 pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
             };
@@ -550,8 +390,6 @@
                 btn.innerHTML = originalHTML;
                 btn.style.opacity = "1";
                 btn.disabled = false;
-                // Restore 3D effect if needed, or leave it
-                element.style.transform = ""; 
             }).catch(err => {
                 alert("Error: " + err.message);
                 btn.innerHTML = originalHTML;
